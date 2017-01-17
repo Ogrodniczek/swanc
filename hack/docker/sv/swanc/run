@@ -1,0 +1,12 @@
+#!/bin/bash
+exec 1> >(logger -s -p daemon.info -t ${PWD##*/})
+exec 2> >(logger -s -p daemon.error -t ${PWD##*/})
+source /etc/envvars
+
+# ref: http://smarden.org/runit/faq.html#depends
+# Ensure that ipsec is running, otherwise ipsec update command fails.
+sv start ipsec || exit 1
+
+echo "Starting swanc..."
+
+exec /usr/bin/swanc  --v=10

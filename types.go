@@ -1,13 +1,13 @@
 package main
 
 import (
-	"text/template"
 	"strings"
+	"text/template"
 )
 
 const (
-	confPerm = 0644
-	confPath = "/etc/ipsec.conf"
+	confPerm  = 0644
+	confPath  = "/etc/ipsec.conf"
 	reloadCmd = "/usr/sbin/ipsec update"
 )
 

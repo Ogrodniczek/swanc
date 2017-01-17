@@ -75,17 +75,17 @@ def version():
 
 
 def fmt():
-    libbuild.ungroup_go_imports('main.go')
-    die(call('goimports -w main.go'))
-    call('gofmt -s -w main.go')
+    libbuild.ungroup_go_imports('*.go')
+    die(call('goimports -w *.go'))
+    call('gofmt -s -w *.go')
 
 
 def vet():
-    call('go vet main.go')
+    call('go vet *.go')
 
 
 def lint():
-    call('golint main.go')
+    call('golint *.go')
 
 
 def gen():
@@ -98,9 +98,9 @@ def build_cmd(name):
         if 'distro' in cfg:
             for goos, archs in cfg['distro'].items():
                 for goarch in archs:
-                    libbuild.go_build(name, goos, goarch, main='main.go'.format(name))
+                    libbuild.go_build(name, goos, goarch, main='*.go'.format(name))
         else:
-            libbuild.go_build(name, libbuild.GOHOSTOS, libbuild.GOHOSTARCH, main='main.go'.format(name))
+            libbuild.go_build(name, libbuild.GOHOSTOS, libbuild.GOHOSTARCH, main='*.go'.format(name))
 
 
 def build_cmds():
