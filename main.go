@@ -18,8 +18,6 @@ import (
 )
 
 type syncer struct {
-	hostsFile string
-
 	master     string
 	kubeconfig string
 	ttl        time.Duration
@@ -74,7 +72,7 @@ func (s *syncer) WatchNodes() {
 }
 
 // Blocks caller. Intended to be called as a Go routine.
-func (s *syncer) HostsSyncLoop() {
+func (s *syncer) SyncLoop() {
 	for {
 		select {
 		case node := <-s.added:
@@ -113,7 +111,6 @@ func main() {
 		removed: make(chan kapi.Node),
 	}
 
-	pflag.StringVar(&s.hostsFile, "hosts-file", "/etc/hosts", "Absolute path to hosts file")
 	pflag.StringVar(&s.master, "master", "", "The address of the Kubernetes API server (overrides any value in kubeconfig)")
 	pflag.StringVar(&s.kubeconfig, "kubeconfig", "", "Path to kubeconfig file with authorization information (the master location is set by the master flag).")
 	pflag.DurationVar(&s.ttl, "peer-ttl", 10*time.Second, "The TTL for this node change watcher")
@@ -123,6 +120,6 @@ func main() {
 	logs.InitLogs()
 	flags.DumpAll()
 
-	go s.HostsSyncLoop()
+	go s.SyncLoop()
 	s.WatchNodes()
 }
