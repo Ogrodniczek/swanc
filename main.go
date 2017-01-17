@@ -1,6 +1,8 @@
 package main
 
 import (
+	"os"
+	"os/exec"
 	"time"
 
 	"github.com/appscode/go/flags"
@@ -20,13 +22,16 @@ import (
 type syncer struct {
 	master     string
 	kubeconfig string
+	client     *clientset.Clientset
 	ttl        time.Duration
+
+	hostIP string
+	vpnPSK string // PSK: Pre Shared Key
 
 	// This flag is only to write test driven code. Default value false.
 	FakeServer bool
 
-	added   chan kapi.Node
-	removed chan kapi.Node
+	reload chan struct{}
 }
 
 // Blocks caller. Intended to be called as a Go routine.
@@ -35,7 +40,7 @@ func (s *syncer) WatchNodes() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	client, err := clientset.NewForConfig(config)
+	s.client, err = clientset.NewForConfig(config)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -43,12 +48,12 @@ func (s *syncer) WatchNodes() {
 	log.Info("started watching for peer endpoints")
 	lw := &cache.ListWatch{
 		ListFunc: func(opts kapi.ListOptions) (runtime.Object, error) {
-			return client.Nodes().List(kapi.ListOptions{
+			return s.client.Nodes().List(kapi.ListOptions{
 				LabelSelector: labels.Everything(),
 			})
 		},
 		WatchFunc: func(options kapi.ListOptions) (watch.Interface, error) {
-			return client.Nodes().Watch(kapi.ListOptions{
+			return s.client.Nodes().Watch(kapi.ListOptions{
 				LabelSelector: labels.Everything(),
 			})
 		},
@@ -60,66 +65,101 @@ func (s *syncer) WatchNodes() {
 		cache.ResourceEventHandlerFuncs{
 			AddFunc: func(obj interface{}) {
 				log.Infoln("got one added event")
-				s.added <- obj.(kapi.Node)
+				s.reload <- struct{}{}
 			},
 			DeleteFunc: func(obj interface{}) {
-				log.Infoln("got one deleted event")
-				s.removed <- obj.(kapi.Node)
+				log.Infoln("got one deleted event", obj.(kapi.Node).Name)
+				s.reload <- struct{}{}
 			},
 		},
 	)
 	controller.Run(wait.NeverStop)
 }
 
+func (s *syncer) Validate() {
+	if s.hostIP == "" {
+		log.Fatalln("Set HOST_IP environment variable to ip used for intra-cluster communication.")
+	}
+	if s.vpnPSK == "" {
+		log.Fatalln("Set VPN_PSK environment variable to encrypt intra-cluster traffic.")
+	}
+}
+
 // Blocks caller. Intended to be called as a Go routine.
 func (s *syncer) SyncLoop() {
 	for {
 		select {
-		case node := <-s.added:
-			ip, name := s.detect(node)
-			s.dostuff(ip, name, true)
-		case node := <-s.removed:
-			ip, name := s.detect(node)
-			s.dostuff(ip, name, false)
+		case <-s.reload:
+			s.reloadVPN()
 		}
 	}
 }
 
-const newline = "\n"
+func (s *syncer) reloadVPN() {
+	nodes, err := s.client.Core().Nodes().List(kapi.ListOptions{LabelSelector: labels.Everything()})
+	if err != nil {
+		log.Fatalln(err)
+	}
 
-func (s *syncer) detect(node kapi.Node) (string, string) {
-	var ip string
-	for _, addr := range node.Status.Addresses {
-		if addr.Type == kapi.NodeInternalIP {
-			ip = addr.Address
+	nodeIPs := make([]string, len(nodes.Items))
+	for i, node := range nodes.Items {
+		for _, addr := range node.Status.Addresses {
+			if addr.Type == kapi.NodeInternalIP {
+				nodeIPs[i] = addr.Address
+				break
+			}
+		}
+		if nodeIPs[i] == "" {
+			for _, addr := range node.Status.Addresses {
+				if addr.Type == kapi.NodeExternalIP {
+					nodeIPs[i] = addr.Address
+					break
+				}
+			}
 		}
 	}
-	if ip == "" {
-		log.Fatalln("No internal ip found for node", node)
-	}
-	return ip, node.GetName()
-}
 
-func (s *syncer) dostuff(nodeIP, nodename string, add bool) {
+	f, err := os.OpenFile(confPath, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, confPerm)
+	if err != nil {
+		log.Fatalln(err)
+	}
+
+	err = cfgTemplate.Execute(f, struct {
+		HostIP  string
+		NodeIPs []string
+	}{
+		s.hostIP,
+		nodeIPs,
+	})
+	if err := f.Close(); err != nil {
+		log.Fatalln(err)
+	}
+
+	if err = exec.Command("/usr/sbin/ipsec", "update").Run(); err != nil {
+		log.Fatalln(err)
+	}
 }
 
 func main() {
 	defer logs.FlushLogs()
 
 	s := &syncer{
-		added:   make(chan kapi.Node),
-		removed: make(chan kapi.Node),
+		reload: make(chan struct{}),
 	}
-
 	pflag.StringVar(&s.master, "master", "", "The address of the Kubernetes API server (overrides any value in kubeconfig)")
 	pflag.StringVar(&s.kubeconfig, "kubeconfig", "", "Path to kubeconfig file with authorization information (the master location is set by the master flag).")
 	pflag.DurationVar(&s.ttl, "peer-ttl", 10*time.Second, "The TTL for this node change watcher")
 	pflag.BoolVar(&s.FakeServer, "fake", false, "runs a fake server only for testings")
 
+	pflag.StringVar(&s.hostIP, "host-ip", os.Getenv("HOST_IP"), "IP used by host for intra-cluster communication")
+	pflag.StringVar(&s.vpnPSK, "vpn-psk", os.Getenv("VPN_PSK"), "Pre shared secret used to encrypt VPN traffic")
+
 	flags.InitFlags()
 	logs.InitLogs()
 	flags.DumpAll()
 
+	s.Validate()
+	s.reloadVPN() // initial loading
 	go s.SyncLoop()
 	s.WatchNodes()
 }
