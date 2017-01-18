@@ -3,6 +3,8 @@ package main
 import (
 	"os"
 	"os/exec"
+	"reflect"
+	"sort"
 	"time"
 
 	"github.com/appscode/go/flags"
@@ -25,8 +27,9 @@ type syncer struct {
 	client     *clientset.Clientset
 	ttl        time.Duration
 
-	hostIP string
-	vpnPSK string // PSK: Pre Shared Key
+	nodeName string
+	nodeIP   string
+	vpnPSK   string // PSK: Pre Shared Key
 
 	// This flag is only to write test driven code. Default value false.
 	FakeServer bool
@@ -64,12 +67,18 @@ func (s *syncer) WatchNodes() {
 		s.ttl,
 		cache.ResourceEventHandlerFuncs{
 			AddFunc: func(obj interface{}) {
-				log.Infoln("got one added event")
+				log.Infoln("got one added node")
 				s.reload <- struct{}{}
 			},
 			DeleteFunc: func(obj interface{}) {
-				log.Infoln("got one deleted event", obj.(kapi.Node).Name)
+				log.Infoln("got one deleted node", obj.(kapi.Node).Name)
 				s.reload <- struct{}{}
+			},
+			UpdateFunc: func(old, new interface{}) {
+				if !reflect.DeepEqual(old, new) {
+					log.Infoln("got one updated node", new.(kapi.Node).Name)
+					s.reload <- struct{}{}
+				}
 			},
 		},
 	)
@@ -77,7 +86,7 @@ func (s *syncer) WatchNodes() {
 }
 
 func (s *syncer) Validate() {
-	if s.hostIP == "" {
+	if s.nodeIP == "" {
 		log.Fatalln("Set HOST_IP environment variable to ip used for intra-cluster communication.")
 	}
 	if s.vpnPSK == "" {
@@ -96,47 +105,78 @@ func (s *syncer) SyncLoop() {
 }
 
 func (s *syncer) reloadVPN() {
-	nodes, err := s.client.Core().Nodes().List(kapi.ListOptions{LabelSelector: labels.Everything()})
+	nodes, err := s.client.Core().Nodes().List(kapi.ListOptions{
+		LabelSelector: labels.SelectorFromSet(map[string]string{
+			"net.beta.appscode.com/vpn": "true",
+		}),
+	})
 	if err != nil {
 		log.Fatalln(err)
 	}
 
+	hasLabel := false
+
 	nodeIPs := make([]string, len(nodes.Items))
-	for i, node := range nodes.Items {
+	i := 0
+	for _, node := range nodes.Items {
+		var ip string
 		for _, addr := range node.Status.Addresses {
 			if addr.Type == kapi.NodeInternalIP {
-				nodeIPs[i] = addr.Address
+				ip = addr.Address
 				break
 			}
 		}
-		if nodeIPs[i] == "" {
+		if ip == "" {
 			for _, addr := range node.Status.Addresses {
 				if addr.Type == kapi.NodeExternalIP {
-					nodeIPs[i] = addr.Address
+					ip = addr.Address
 					break
 				}
 			}
 		}
+		if ip != s.nodeIP {
+			nodeIPs[i] = ip
+			i++
+		} else {
+			hasLabel = true
+		}
 	}
 
-	f, err := os.OpenFile(confPath, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, confPerm)
-	if err != nil {
-		log.Fatalln(err)
+	if !hasLabel {
+		node, err := s.client.Core().Nodes().Get(s.nodeName)
+		if err != nil {
+			log.Fatalln(err)
+		}
+		node.Labels["net.beta.appscode.com/vpn"] = "true"
+		_, err = s.client.Core().Nodes().Update(node)
+		if err != nil {
+			log.Fatalln(err)
+		}
 	}
 
-	err = cfgTemplate.Execute(f, struct {
-		HostIP  string
-		NodeIPs []string
-	}{
-		s.hostIP,
-		nodeIPs,
-	})
-	if err := f.Close(); err != nil {
-		log.Fatalln(err)
-	}
+	nodeIPs = nodeIPs[:i]
+	if i > 0 {
+		sort.Strings(nodeIPs)
 
-	if err = exec.Command("/usr/sbin/ipsec", "update").Run(); err != nil {
-		log.Fatalln(err)
+		f, err := os.OpenFile(confPath, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, confPerm)
+		if err != nil {
+			log.Fatalln(err)
+		}
+
+		err = cfgTemplate.Execute(f, struct {
+			HostIP  string
+			NodeIPs []string
+		}{
+			s.nodeIP,
+			nodeIPs,
+		})
+		if err := f.Close(); err != nil {
+			log.Fatalln(err)
+		}
+
+		if err = exec.Command("/usr/sbin/ipsec", "update").Run(); err != nil {
+			log.Fatalln(err)
+		}
 	}
 }
 
@@ -151,7 +191,8 @@ func main() {
 	pflag.DurationVar(&s.ttl, "peer-ttl", 10*time.Second, "The TTL for this node change watcher")
 	pflag.BoolVar(&s.FakeServer, "fake", false, "runs a fake server only for testings")
 
-	pflag.StringVar(&s.hostIP, "host-ip", os.Getenv("HOST_IP"), "IP used by host for intra-cluster communication")
+	pflag.StringVar(&s.nodeName, "node-name", os.Getenv("NODE_NAME"), "Name used by kubernetes to identify host")
+	pflag.StringVar(&s.nodeIP, "node-ip", os.Getenv("NODE_IP"), "IP used by host for intra-cluster communication")
 	pflag.StringVar(&s.vpnPSK, "vpn-psk", os.Getenv("VPN_PSK"), "Pre shared secret used to encrypt VPN traffic")
 
 	flags.InitFlags()
