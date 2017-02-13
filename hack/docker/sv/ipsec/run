@@ -5,4 +5,4 @@ source /etc/envvars
 
 echo "Starting StronSwan..."
 
-exec /usr/sbin/ipsec start --nofork
+exec /usr/sbin/ipsec start --nofork --conf /srv/ipsec/ipsec.conf

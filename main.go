@@ -3,6 +3,7 @@ package main
 import (
 	"os"
 	"os/exec"
+	"path/filepath"
 	"reflect"
 	"sort"
 	"time"
@@ -95,7 +96,13 @@ func (s *syncer) SyncLoop() {
 	}
 }
 
-func (s *syncer) reloadVPN() {
+func (s *syncer) init() {
+	d := filepath.Dir(confPath)
+	err := os.MkdirAll(d, 0755)
+	if err != nil {
+		log.Fatal(err)
+	}
+
 	config, err := clientcmd.BuildConfigFromFlags(s.master, s.kubeconfig)
 	if err != nil {
 		log.Fatal(err)
@@ -104,7 +111,9 @@ func (s *syncer) reloadVPN() {
 	if err != nil {
 		log.Fatal(err)
 	}
+}
 
+func (s *syncer) reloadVPN() {
 	nodes, err := s.client.Core().Nodes().List(kapi.ListOptions{
 		LabelSelector: labels.SelectorFromSet(map[string]string{
 			"net.beta.appscode.com/vpn": "true",
@@ -199,6 +208,7 @@ func main() {
 	logs.InitLogs()
 	flags.DumpAll()
 
+	s.init()
 	s.Validate()
 	s.reloadVPN() // initial loading
 	go s.SyncLoop()

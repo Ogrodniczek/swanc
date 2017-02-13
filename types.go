@@ -7,7 +7,7 @@ import (
 
 const (
 	confPerm  = 0644
-	confPath  = "/etc/ipsec.conf"
+	confPath  = "/srv/ipsec/ipsec.conf"
 	reloadCmd = "/usr/sbin/ipsec update"
 )
 
