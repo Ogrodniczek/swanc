@@ -1,14 +1,12 @@
-FROM appscode/base:8.6
+FROM appscode/base:8.7
 
 # Install strongswan and etcdctl
 RUN set -x \
   && apt-get update \
   && apt-get install -y --no-install-recommends \
     ca-certificates \
-    wget \
     strongswan \
     strongswan-ikev2 \
-  && apt-get purge -y --auto-remove wget \
   && rm -rf /var/lib/apt/lists/* /usr/share/doc /usr/share/man /tmp/*
 
 # Install confd
