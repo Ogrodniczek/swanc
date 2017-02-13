@@ -63,12 +63,12 @@ func (s *syncer) WatchNodes() {
 				s.reload <- struct{}{}
 			},
 			DeleteFunc: func(obj interface{}) {
-				log.Infoln("got one deleted node", obj.(kapi.Node).Name)
+				log.Infoln("got one deleted node", obj.(*kapi.Node).Name)
 				s.reload <- struct{}{}
 			},
 			UpdateFunc: func(old, new interface{}) {
 				if !reflect.DeepEqual(old, new) {
-					log.Infoln("got one updated node", new.(kapi.Node).Name)
+					log.Infoln("got one updated node", new.(*kapi.Node).Name)
 					s.reload <- struct{}{}
 				}
 			},
