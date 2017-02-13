@@ -6,10 +6,10 @@ import (
 )
 
 const (
-	confPerm    = 0644
-	confPath    = "/srv/ipsec/ipsec.conf"
-	secretsPath = "/etc/ipsec.secrets"
-	reloadCmd   = "/usr/sbin/ipsec update"
+	confPerm = 0644
+	confPath = "/etc/ipsec.conf"
+	// secretsPath = "/etc/ipsec.secrets"
+	reloadCmd = "/usr/sbin/ipsec update"
 )
 
 var (

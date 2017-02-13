@@ -1,12 +1,12 @@
 package main
 
 import (
-	"io/ioutil"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"reflect"
 	"sort"
+	"strings"
 	"time"
 
 	"github.com/appscode/go/flags"
@@ -31,7 +31,6 @@ type syncer struct {
 
 	nodeName string
 	nodeIP   string
-	vpnPSK   string // PSK: Pre Shared Key
 
 	// This flag is only to write test driven code. Default value false.
 	FakeServer bool
@@ -82,9 +81,6 @@ func (s *syncer) Validate() {
 	if s.nodeIP == "" {
 		log.Fatalln("Set HOST_IP environment variable to ip used for intra-cluster communication.")
 	}
-	if s.vpnPSK == "" {
-		log.Fatalln("Set VPN_PSK environment variable to encrypt intra-cluster traffic.")
-	}
 }
 
 // Blocks caller. Intended to be called as a Go routine.
@@ -99,14 +95,11 @@ func (s *syncer) SyncLoop() {
 
 func (s *syncer) init() {
 	d := filepath.Dir(confPath)
-	err := os.MkdirAll(d, 0755)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	err = ioutil.WriteFile(secretsPath, []byte(" : PSK "+s.vpnPSK), 0600)
-	if err != nil {
-		log.Fatal(err)
+	if _, err := os.Stat(d); os.IsNotExist(err) {
+		err = os.MkdirAll(d, 0755)
+		if err != nil {
+			log.Fatal(err)
+		}
 	}
 
 	config, err := clientcmd.BuildConfigFromFlags(s.master, s.kubeconfig)
@@ -200,7 +193,8 @@ func (s *syncer) reloadVPN() {
 			log.Fatalln(err)
 		}
 
-		if err = exec.Command("/usr/sbin/ipsec", "update").Run(); err != nil {
+		cmd := strings.Split(reloadCmd, " ")
+		if err = exec.Command(cmd[0], cmd[1:]...).Run(); err != nil {
 			log.Fatalln(err)
 		}
 	}
@@ -219,7 +213,6 @@ func main() {
 
 	pflag.StringVar(&s.nodeName, "node-name", os.Getenv("NODE_NAME"), "Name used by kubernetes to identify host")
 	pflag.StringVar(&s.nodeIP, "node-ip", os.Getenv("NODE_IP"), "IP used by host for intra-cluster communication")
-	pflag.StringVar(&s.vpnPSK, "vpn-psk", os.Getenv("VPN_PSK"), "Pre shared secret used to encrypt VPN traffic")
 
 	flags.InitFlags()
 	logs.InitLogs()
