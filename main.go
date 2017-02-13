@@ -4,7 +4,6 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
-	"reflect"
 	"sort"
 	"strings"
 	"time"
@@ -38,18 +37,24 @@ type syncer struct {
 	reload chan struct{}
 }
 
+const nodeKey = "net.beta.appscode.com/vpn"
+
+var nodeSelector = labels.SelectorFromSet(map[string]string{
+	nodeKey: "true",
+})
+
 // Blocks caller. Intended to be called as a Go routine.
 func (s *syncer) WatchNodes() {
 	log.Info("started watching for peer endpoints")
 	lw := &cache.ListWatch{
 		ListFunc: func(opts kapi.ListOptions) (runtime.Object, error) {
 			return s.client.Nodes().List(kapi.ListOptions{
-				LabelSelector: labels.Everything(),
+				LabelSelector: nodeSelector,
 			})
 		},
 		WatchFunc: func(options kapi.ListOptions) (watch.Interface, error) {
 			return s.client.Nodes().Watch(kapi.ListOptions{
-				LabelSelector: labels.Everything(),
+				LabelSelector: nodeSelector,
 			})
 		},
 	}
@@ -67,7 +72,16 @@ func (s *syncer) WatchNodes() {
 				s.reload <- struct{}{}
 			},
 			UpdateFunc: func(old, new interface{}) {
-				if !reflect.DeepEqual(old, new) {
+				oldNode, ok := old.(*kapi.Node)
+				if !ok {
+					return
+				}
+				newNode, ok := new.(*kapi.Node)
+				if !ok {
+					return
+				}
+				if oldNode.Labels[nodeKey] != newNode.Labels[nodeKey] ||
+					isNodeReady(oldNode) != isNodeReady(newNode) {
 					log.Infoln("got one updated node", new.(*kapi.Node).Name)
 					s.reload <- struct{}{}
 				}
@@ -112,11 +126,18 @@ func (s *syncer) init() {
 	}
 }
 
+func isNodeReady(n *kapi.Node) bool {
+	for _, cond := range n.Status.Conditions {
+		if cond.Type == "Ready" && cond.Status == "True" {
+			return true
+		}
+	}
+	return false
+}
+
 func (s *syncer) reloadVPN() {
 	nodes, err := s.client.Core().Nodes().List(kapi.ListOptions{
-		LabelSelector: labels.SelectorFromSet(map[string]string{
-			"net.beta.appscode.com/vpn": "true",
-		}),
+		LabelSelector: nodeSelector,
 	})
 	if err != nil {
 		log.Fatalln(err)
@@ -127,14 +148,7 @@ func (s *syncer) reloadVPN() {
 	nodeIPs := make([]string, len(nodes.Items))
 	i := 0
 	for _, node := range nodes.Items {
-		ready := false
-		for _, cond := range node.Status.Conditions {
-			if cond.Type == "Ready" && cond.Status == "True" {
-				ready = true
-				break
-			}
-		}
-		if !ready {
+		if !isNodeReady(&node) {
 			continue
 		}
 
