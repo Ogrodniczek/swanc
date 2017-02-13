@@ -134,6 +134,17 @@ func (s *syncer) reloadVPN() {
 	nodeIPs := make([]string, len(nodes.Items))
 	i := 0
 	for _, node := range nodes.Items {
+		ready := false
+		for _, cond := range node.Status.Conditions {
+			if cond.Type == "Ready" && cond.Status == "True" {
+				ready = true
+				break
+			}
+		}
+		if !ready {
+			continue
+		}
+
 		var ip string
 		for _, addr := range node.Status.Addresses {
 			if addr.Type == kapi.NodeInternalIP {
