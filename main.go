@@ -1,6 +1,7 @@
 package main
 
 import (
+	"io/ioutil"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -99,6 +100,11 @@ func (s *syncer) SyncLoop() {
 func (s *syncer) init() {
 	d := filepath.Dir(confPath)
 	err := os.MkdirAll(d, 0755)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	err = ioutil.WriteFile(secretsPath, []byte(" : PSK "+s.vpnPSK), 0600)
 	if err != nil {
 		log.Fatal(err)
 	}
