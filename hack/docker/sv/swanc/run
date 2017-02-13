@@ -9,4 +9,4 @@ sv start ipsec || exit 1
 
 echo "Starting swanc..."
 
-exec /usr/bin/swanc  --v=10
+exec /usr/bin/swanc  --v=3
