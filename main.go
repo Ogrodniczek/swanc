@@ -39,15 +39,6 @@ type syncer struct {
 
 // Blocks caller. Intended to be called as a Go routine.
 func (s *syncer) WatchNodes() {
-	config, err := clientcmd.BuildConfigFromFlags(s.master, s.kubeconfig)
-	if err != nil {
-		log.Fatal(err)
-	}
-	s.client, err = clientset.NewForConfig(config)
-	if err != nil {
-		log.Fatal(err)
-	}
-
 	log.Info("started watching for peer endpoints")
 	lw := &cache.ListWatch{
 		ListFunc: func(opts kapi.ListOptions) (runtime.Object, error) {
@@ -105,6 +96,15 @@ func (s *syncer) SyncLoop() {
 }
 
 func (s *syncer) reloadVPN() {
+	config, err := clientcmd.BuildConfigFromFlags(s.master, s.kubeconfig)
+	if err != nil {
+		log.Fatal(err)
+	}
+	s.client, err = clientset.NewForConfig(config)
+	if err != nil {
+		log.Fatal(err)
+	}
+
 	nodes, err := s.client.Core().Nodes().List(kapi.ListOptions{
 		LabelSelector: labels.SelectorFromSet(map[string]string{
 			"net.beta.appscode.com/vpn": "true",
