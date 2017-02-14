@@ -7,6 +7,7 @@ RUN set -x \
     ca-certificates \
     strongswan \
     strongswan-ikev2 \
+    libstrongswan-standard-plugins libstrongswan-extra-plugins libcharon-extra-plugins \
   && rm -rf /var/lib/apt/lists/* /usr/share/doc /usr/share/man /tmp/*
 
 # Install confd
