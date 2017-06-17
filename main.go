@@ -12,14 +12,15 @@ import (
 	"github.com/appscode/log"
 	logs "github.com/appscode/log/golog"
 	"github.com/spf13/pflag"
-	kapi "k8s.io/kubernetes/pkg/api"
-	"k8s.io/kubernetes/pkg/client/cache"
-	clientset "k8s.io/kubernetes/pkg/client/clientset_generated/internalclientset"
-	"k8s.io/kubernetes/pkg/client/unversioned/clientcmd"
-	"k8s.io/kubernetes/pkg/labels"
-	"k8s.io/kubernetes/pkg/runtime"
-	"k8s.io/kubernetes/pkg/util/wait"
-	"k8s.io/kubernetes/pkg/watch"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/labels"
+	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/util/wait"
+	"k8s.io/apimachinery/pkg/watch"
+	clientset "k8s.io/client-go/kubernetes"
+	apiv1 "k8s.io/client-go/pkg/api/v1"
+	"k8s.io/client-go/tools/cache"
+	"k8s.io/client-go/tools/clientcmd"
 )
 
 type syncer struct {
@@ -47,20 +48,20 @@ var nodeSelector = labels.SelectorFromSet(map[string]string{
 func (s *syncer) WatchNodes() {
 	log.Info("started watching for peer endpoints")
 	lw := &cache.ListWatch{
-		ListFunc: func(opts kapi.ListOptions) (runtime.Object, error) {
-			return s.client.Nodes().List(kapi.ListOptions{
-				LabelSelector: nodeSelector,
+		ListFunc: func(opts metav1.ListOptions) (runtime.Object, error) {
+			return s.client.Nodes().List(metav1.ListOptions{
+				LabelSelector: nodeSelector.String(),
 			})
 		},
-		WatchFunc: func(options kapi.ListOptions) (watch.Interface, error) {
-			return s.client.Nodes().Watch(kapi.ListOptions{
-				LabelSelector: nodeSelector,
+		WatchFunc: func(options metav1.ListOptions) (watch.Interface, error) {
+			return s.client.Nodes().Watch(metav1.ListOptions{
+				LabelSelector: nodeSelector.String(),
 			})
 		},
 	}
-	// kCachePopulated(k, events.Pod, &kapi.Pod{}, nil)
+	// kCachePopulated(k, events.Pod, &apiv1.Pod{}, nil)
 	_, controller := cache.NewInformer(lw,
-		&kapi.Node{},
+		&apiv1.Node{},
 		s.ttl,
 		cache.ResourceEventHandlerFuncs{
 			AddFunc: func(obj interface{}) {
@@ -68,21 +69,21 @@ func (s *syncer) WatchNodes() {
 				s.reload <- struct{}{}
 			},
 			DeleteFunc: func(obj interface{}) {
-				log.Infoln("got one deleted node", obj.(*kapi.Node).Name)
+				log.Infoln("got one deleted node", obj.(*apiv1.Node).Name)
 				s.reload <- struct{}{}
 			},
 			UpdateFunc: func(old, new interface{}) {
-				oldNode, ok := old.(*kapi.Node)
+				oldNode, ok := old.(*apiv1.Node)
 				if !ok {
 					return
 				}
-				newNode, ok := new.(*kapi.Node)
+				newNode, ok := new.(*apiv1.Node)
 				if !ok {
 					return
 				}
 				if oldNode.Labels[nodeKey] != newNode.Labels[nodeKey] ||
 					isNodeReady(oldNode) != isNodeReady(newNode) {
-					log.Infoln("got one updated node", new.(*kapi.Node).Name)
+					log.Infoln("got one updated node", new.(*apiv1.Node).Name)
 					s.reload <- struct{}{}
 				}
 			},
@@ -126,7 +127,7 @@ func (s *syncer) init() {
 	}
 }
 
-func isNodeReady(n *kapi.Node) bool {
+func isNodeReady(n *apiv1.Node) bool {
 	for _, cond := range n.Status.Conditions {
 		if cond.Type == "Ready" && cond.Status == "True" {
 			return true
@@ -136,8 +137,8 @@ func isNodeReady(n *kapi.Node) bool {
 }
 
 func (s *syncer) reloadVPN() {
-	nodes, err := s.client.Core().Nodes().List(kapi.ListOptions{
-		LabelSelector: nodeSelector,
+	nodes, err := s.client.CoreV1().Nodes().List(metav1.ListOptions{
+		LabelSelector: nodeSelector.String(),
 	})
 	if err != nil {
 		log.Fatalln(err)
@@ -154,14 +155,14 @@ func (s *syncer) reloadVPN() {
 
 		var ip string
 		for _, addr := range node.Status.Addresses {
-			if addr.Type == kapi.NodeInternalIP {
+			if addr.Type == apiv1.NodeInternalIP {
 				ip = addr.Address
 				break
 			}
 		}
 		if ip == "" {
 			for _, addr := range node.Status.Addresses {
-				if addr.Type == kapi.NodeExternalIP {
+				if addr.Type == apiv1.NodeExternalIP {
 					ip = addr.Address
 					break
 				}
@@ -176,12 +177,12 @@ func (s *syncer) reloadVPN() {
 	}
 
 	if !hasLabel {
-		node, err := s.client.Core().Nodes().Get(s.nodeName)
+		node, err := s.client.CoreV1().Nodes().Get(s.nodeName, metav1.GetOptions{})
 		if err != nil {
 			log.Fatalln(err)
 		}
 		node.Labels["net.beta.appscode.com/vpn"] = "true"
-		_, err = s.client.Core().Nodes().Update(node)
+		_, err = s.client.CoreV1().Nodes().Update(node)
 		if err != nil {
 			log.Fatalln(err)
 		}
