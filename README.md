@@ -10,6 +10,14 @@ Swanc __does not follow semver__, rather the _major_ version of operator points 
 Kubernetes [client-go](https://github.com/kubernetes/client-go#branches-and-tags) version. You can verify this
 from the `glide.yaml` file. This means there might be breaking changes between point releases of the operator.
 
+---
+
+**The swanc operator collects anonymous usage statistics to help us learn
+how the software is being used and how we can improve it. To disable stats collection,
+run the operator with the flag** `--analytics=false`.
+
+---
+
 ## Acknowledgement
  - strongswan https://www.strongswan.org/
 

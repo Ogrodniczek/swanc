@@ -1,10 +1,10 @@
-hash: 4404cd69549d4d79cd086354060bd9c69806b434d51046c63275b215e1da0203
-updated: 2017-06-16T21:01:54.655957354-07:00
+hash: 6c55bb938fd2ed5d6e8dac9f1feca97b171efd8b98844c415bdc3ecd78ebbcac
+updated: 2017-06-16T21:41:29.919568813-07:00
 imports:
 - name: github.com/appscode/go
   version: 5eabd32a8a0fe824b5e12c37dc53a0afea8507c9
   subpackages:
-  - flags
+  - version
 - name: github.com/appscode/log
   version: 68e0e42e42c01371f3950571fc87c2298a51dd8f
   subpackages:
@@ -48,6 +48,8 @@ imports:
   version: 6633656539c1639d9d78127b7d47c622b5d7b6dc
 - name: github.com/inconshreveable/mousetrap
   version: 76626ae9c91c4f2a10f34cad8ce83ea42c93bb75
+- name: github.com/jpillora/go-ogle-analytics
+  version: 14b04e0594ef6a9fd943363b135656f0ec8c9d0e
 - name: github.com/juju/ratelimit
   version: 77ed1c8a01217656d2080ad51981f6e99adaa177
 - name: github.com/mailru/easyjson

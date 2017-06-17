@@ -2,6 +2,8 @@ package: github.com/appscode/swanc
 import:
 - package: github.com/appscode/go
 - package: github.com/appscode/log
+- package: github.com/jpillora/go-ogle-analytics
+- package: github.com/spf13/cobra
 - package: github.com/spf13/pflag
 - package: k8s.io/apimachinery
   version: 75b8dd260ef0469d96d578705a87cffd0e09dab8
