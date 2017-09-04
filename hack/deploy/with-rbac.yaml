@@ -1,0 +1,96 @@
+apiVersion: rbac.authorization.k8s.io/v1beta1
+kind: ClusterRole
+metadata:
+  name: swanc
+  labels:
+    app: swanc
+rules:
+- apiGroups: [""]
+  resources: ["nodes"]
+  verbs: ["get", "list", "watch"]
+---
+apiVersion: rbac.authorization.k8s.io/v1beta1
+kind: ClusterRoleBinding
+metadata:
+  name: swanc
+  labels:
+    app: swanc
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: swanc
+subjects:
+- kind: ServiceAccount
+  name: swanc
+  namespace: kube-system
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: swanc
+  namespace: kube-system
+  labels:
+    app: swanc
+---
+apiVersion: extensions/v1beta1
+kind: DaemonSet
+metadata:
+  labels:
+    app: swanc
+  name: swanc
+  namespace: kube-system
+spec:
+  updateStrategy:
+    type: RollingUpdate
+  template:
+    metadata:
+      labels:
+        app: strongswan
+    spec:
+      serviceAccountName: swanc
+      hostNetwork: true
+      nodeSelector:
+        beta.kubernetes.io/arch: amd64
+      tolerations:
+      - key: "node-role.kubernetes.io/master"
+        operator: "Exists"
+        effect: "NoSchedule"
+      containers:
+      - name: operator
+        image: appscode/swanc:1.5.0
+        imagePullPolicy: IfNotPresent
+        securityContext:
+          privileged: true
+        env:
+        - name: NODE_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: spec.nodeName
+        - name: NODE_IP
+          valueFrom:
+            fieldRef:
+              fieldPath: status.podIP
+        volumeMounts:
+        - name: ipsecconf
+          mountPath: /etc/ipsec.conf
+        - name: ipsecsecrets
+          mountPath: /etc/ipsec.secrets
+        - name: ipsecconf
+          mountPath: /etc/ipsec.con
+        - name: libmodules
+          mountPath: /lib/modules
+        - name: modprobe
+          mountPath: /sbin/modprobe
+      volumes:
+      - name: ipsecconf
+        hostPath:
+          path: /etc/ipsec.conf
+      - name: ipsecsecrets
+        hostPath:
+          path: /etc/ipsec.secrets
+      - name: libmodules
+        hostPath:
+          path: /lib/modules
+      - name: modprobe
+        hostPath:
+          path: /sbin/modprobe

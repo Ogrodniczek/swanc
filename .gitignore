@@ -33,3 +33,4 @@ vendor/
 .idea/
 dist/
 *.pyc
+.vscode/

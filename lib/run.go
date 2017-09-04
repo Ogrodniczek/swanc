@@ -1,4 +1,4 @@
-package main
+package lib
 
 import (
 	"os"
@@ -8,8 +8,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/appscode/log"
-	"github.com/spf13/cobra"
+	"github.com/appscode/go/log"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -21,18 +20,15 @@ import (
 	"k8s.io/client-go/tools/clientcmd"
 )
 
-type syncer struct {
-	master     string
-	kubeconfig string
+type Operator struct {
+	Master     string
+	Kubeconfig string
 	client     *clientset.Clientset
-	ttl        time.Duration
+	Ttl        time.Duration
 
-	nodeName string
-	nodeIP   string
-
-	enableAnalytics bool
-
-	reload chan struct{}
+	NodeName string
+	NodeIP   string
+	Reload   chan struct{}
 }
 
 const nodeKey = "net.beta.appscode.com/vpn"
@@ -42,16 +38,16 @@ var nodeSelector = labels.SelectorFromSet(map[string]string{
 })
 
 // Blocks caller. Intended to be called as a Go routine.
-func (s *syncer) WatchNodes() {
+func (op *Operator) WatchNodes() {
 	log.Info("started watching for peer endpoints")
 	lw := &cache.ListWatch{
 		ListFunc: func(opts metav1.ListOptions) (runtime.Object, error) {
-			return s.client.Nodes().List(metav1.ListOptions{
+			return op.client.Nodes().List(metav1.ListOptions{
 				LabelSelector: nodeSelector.String(),
 			})
 		},
 		WatchFunc: func(options metav1.ListOptions) (watch.Interface, error) {
-			return s.client.Nodes().Watch(metav1.ListOptions{
+			return op.client.Nodes().Watch(metav1.ListOptions{
 				LabelSelector: nodeSelector.String(),
 			})
 		},
@@ -59,15 +55,15 @@ func (s *syncer) WatchNodes() {
 	// kCachePopulated(k, events.Pod, &apiv1.Pod{}, nil)
 	_, controller := cache.NewInformer(lw,
 		&apiv1.Node{},
-		s.ttl,
+		op.Ttl,
 		cache.ResourceEventHandlerFuncs{
 			AddFunc: func(obj interface{}) {
 				log.Infoln("got one added node")
-				s.reload <- struct{}{}
+				op.Reload <- struct{}{}
 			},
 			DeleteFunc: func(obj interface{}) {
 				log.Infoln("got one deleted node", obj.(*apiv1.Node).Name)
-				s.reload <- struct{}{}
+				op.Reload <- struct{}{}
 			},
 			UpdateFunc: func(old, new interface{}) {
 				oldNode, ok := old.(*apiv1.Node)
@@ -81,7 +77,7 @@ func (s *syncer) WatchNodes() {
 				if oldNode.Labels[nodeKey] != newNode.Labels[nodeKey] ||
 					isNodeReady(oldNode) != isNodeReady(newNode) {
 					log.Infoln("got one updated node", new.(*apiv1.Node).Name)
-					s.reload <- struct{}{}
+					op.Reload <- struct{}{}
 				}
 			},
 		},
@@ -89,23 +85,23 @@ func (s *syncer) WatchNodes() {
 	controller.Run(wait.NeverStop)
 }
 
-func (s *syncer) Validate() {
-	if s.nodeIP == "" {
+func (op *Operator) Validate() {
+	if op.NodeIP == "" {
 		log.Fatalln("Set HOST_IP environment variable to ip used for intra-cluster communication.")
 	}
 }
 
 // Blocks caller. Intended to be called as a Go routine.
-func (s *syncer) SyncLoop() {
+func (op *Operator) SyncLoop() {
 	for {
 		select {
-		case <-s.reload:
-			s.reloadVPN()
+		case <-op.Reload:
+			op.ReloadVPN()
 		}
 	}
 }
 
-func (s *syncer) init() {
+func (op *Operator) Init() {
 	d := filepath.Dir(confPath)
 	if _, err := os.Stat(d); os.IsNotExist(err) {
 		err = os.MkdirAll(d, 0755)
@@ -114,11 +110,11 @@ func (s *syncer) init() {
 		}
 	}
 
-	config, err := clientcmd.BuildConfigFromFlags(s.master, s.kubeconfig)
+	config, err := clientcmd.BuildConfigFromFlags(op.Master, op.Kubeconfig)
 	if err != nil {
 		log.Fatal(err)
 	}
-	s.client, err = clientset.NewForConfig(config)
+	op.client, err = clientset.NewForConfig(config)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -133,8 +129,8 @@ func isNodeReady(n *apiv1.Node) bool {
 	return false
 }
 
-func (s *syncer) reloadVPN() {
-	nodes, err := s.client.CoreV1().Nodes().List(metav1.ListOptions{
+func (op *Operator) ReloadVPN() {
+	nodes, err := op.client.CoreV1().Nodes().List(metav1.ListOptions{
 		LabelSelector: nodeSelector.String(),
 	})
 	if err != nil {
@@ -165,7 +161,7 @@ func (s *syncer) reloadVPN() {
 				}
 			}
 		}
-		if ip != s.nodeIP {
+		if ip != op.NodeIP {
 			nodeIPs[i] = ip
 			i++
 		} else {
@@ -174,12 +170,12 @@ func (s *syncer) reloadVPN() {
 	}
 
 	if !hasLabel {
-		node, err := s.client.CoreV1().Nodes().Get(s.nodeName, metav1.GetOptions{})
+		node, err := op.client.CoreV1().Nodes().Get(op.NodeName, metav1.GetOptions{})
 		if err != nil {
 			log.Fatalln(err)
 		}
 		node.Labels["net.beta.appscode.com/vpn"] = "true"
-		_, err = s.client.CoreV1().Nodes().Update(node)
+		_, err = op.client.CoreV1().Nodes().Update(node)
 		if err != nil {
 			log.Fatalln(err)
 		}
@@ -198,7 +194,7 @@ func (s *syncer) reloadVPN() {
 			HostIP  string
 			NodeIPs []string
 		}{
-			s.nodeIP,
+			op.NodeIP,
 			nodeIPs,
 		})
 		if err := f.Close(); err != nil {
@@ -210,39 +206,4 @@ func (s *syncer) reloadVPN() {
 			log.Fatalln(err)
 		}
 	}
-}
-
-func NewCmdRun() *cobra.Command {
-	s := &syncer{
-		reload: make(chan struct{}),
-	}
-	cmd := &cobra.Command{
-		Use:   "run",
-		Short: "Run operator",
-		Run: func(cmd *cobra.Command, args []string) {
-			if s.enableAnalytics {
-				Enable()
-			}
-			SendEvent("operator", "started", Version)
-
-			s.init()
-			s.Validate()
-			s.reloadVPN() // initial loading
-			go s.SyncLoop()
-			s.WatchNodes()
-		},
-		PostRun: func(cmd *cobra.Command, args []string) {
-			SendEvent("operator", "stopped", Version)
-		},
-	}
-
-	cmd.Flags().StringVar(&s.master, "master", "", "The address of the Kubernetes API server (overrides any value in kubeconfig)")
-	cmd.Flags().StringVar(&s.kubeconfig, "kubeconfig", "", "Path to kubeconfig file with authorization information (the master location is set by the master flag).")
-	cmd.Flags().DurationVar(&s.ttl, "peer-ttl", 10*time.Second, "The TTL for this node change watcher")
-	cmd.Flags().BoolVar(&s.enableAnalytics, "analytics", s.enableAnalytics, "Send analytical event to Google Analytics")
-
-	cmd.Flags().StringVar(&s.nodeName, "node-name", os.Getenv("NODE_NAME"), "Name used by kubernetes to identify host")
-	cmd.Flags().StringVar(&s.nodeIP, "node-ip", os.Getenv("NODE_IP"), "IP used by host for intra-cluster communication")
-
-	return cmd
 }

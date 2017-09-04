@@ -14,7 +14,7 @@ BIN=$GOPATH/bin
 ROOT=$GOPATH
 
 APPSCODE_ENV=${APPSCODE_ENV:-dev}
-IMG=strongswan
+IMG=swanc
 
 DIST=$GOPATH/src/github.com/appscode/swanc/dist
 mkdir -p $DIST
