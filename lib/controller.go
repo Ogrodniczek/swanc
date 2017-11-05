@@ -163,6 +163,7 @@ func (c *Controller) mount(reload bool) error {
 		}
 	}
 
+	// Should generate the default ipsec.conf at least.
 	var buf bytes.Buffer
 	err = cfgTemplate.Execute(&buf, td)
 	if err != nil {

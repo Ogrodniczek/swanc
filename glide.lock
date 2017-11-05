@@ -1,5 +1,5 @@
 hash: 05d44e07243fef547ba9ce33102c39f2c965e99da56fe7233dc772d78b133736
-updated: 2017-11-05T01:41:37.226115092-07:00
+updated: 2017-11-05T14:52:24.996940278-08:00
 imports:
 - name: cloud.google.com/go
   version: 3b1ae45394a234c385be014e9a488f2bb6eef821
@@ -17,7 +17,7 @@ imports:
   - types
   - version
 - name: github.com/appscode/kutil
-  version: 056e47e5be07d75f3943f0555503b1840646c455
+  version: f672d520d10c210f9fadf92d31fc179ad24ef96e
   subpackages:
   - core/v1
 - name: github.com/Azure/go-autorest
