@@ -82,6 +82,7 @@ spec:
           mountPath: /sbin/modprobe
         - name: ipseckey
           mountPath: /etc/ipsec.secrets
+          subPath: ipsec.secrets
           readOnly: true
         - name: ipsecconf
           mountPath: /srv/swanc
