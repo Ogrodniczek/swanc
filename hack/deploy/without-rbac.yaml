@@ -12,6 +12,8 @@ spec:
     metadata:
       labels:
         app: swanc
+      annotations:
+        scheduler.alpha.kubernetes.io/critical-pod: ''
     spec:
       hostNetwork: true
       nodeSelector:
