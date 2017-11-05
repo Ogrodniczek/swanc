@@ -1,4 +1,4 @@
-FROM appscode/base:8.7
+FROM appscode/ubuntu:16.04
 
 # Install strongswan and etcdctl
 RUN set -x \
@@ -17,5 +17,6 @@ COPY swanc /usr/bin/swanc
 COPY sv /etc/sv/
 RUN ln -s /etc/sv /etc/service
 
+COPY runit.sh /runit.sh
 ENTRYPOINT ["/runit.sh"]
 EXPOSE 4500/udp 500/udp

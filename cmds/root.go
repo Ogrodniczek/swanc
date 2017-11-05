@@ -20,8 +20,9 @@ func NewRootCmd(version string) *cobra.Command {
 		enableAnalytics = true
 	)
 	rootCmd := &cobra.Command{
-		Use:   "swanc [command]",
-		Short: `Swanc - StrongSwan based VPN Controller for Kubernetes by AppsCode`,
+		Use:               "swanc [command]",
+		Short:             `Swanc - StrongSwan based VPN Controller for Kubernetes by AppsCode`,
+		DisableAutoGenTag: true,
 		PersistentPreRun: func(c *cobra.Command, args []string) {
 			c.Flags().VisitAll(func(flag *pflag.Flag) {
 				log.Printf("FLAG: --%s=%q", flag.Name, flag.Value)

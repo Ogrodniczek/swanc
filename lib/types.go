@@ -3,16 +3,27 @@ package lib
 import (
 	"strings"
 	"text/template"
+	"time"
+
+	"k8s.io/apimachinery/pkg/labels"
 )
 
 const (
 	confPerm = 0644
-	confPath = "/etc/ipsec.conf"
+	confDir  = "/srv/swanc"
+	confFile = "ipsec.conf"
+
 	// secretsPath = "/etc/ipsec.secrets"
 	reloadCmd = "/usr/sbin/ipsec update"
+
+	nodeKey = "net.beta.appscode.com/vpn"
 )
 
 var (
+	nodeSelector = labels.SelectorFromSet(map[string]string{
+		nodeKey: "",
+	})
+
 	funcMap = template.FuncMap{
 		"replace": strings.Replace,
 	}
@@ -33,14 +44,30 @@ conn %default
         mobike=no
         keyexchange=ikev2
 
-{{with $ip := .HostIP}}{{range $peer_ip := $.NodeIPs }}{{ if ne $ip $peer_ip }}
-conn {{replace $ip "." "_" -1}}__{{replace $peer_ip "." "_" -1}}
+{{ if .HostIP }}
+{{ range $peer_ip := $.NodeIPs }}{{ if ne .HostIP $peer_ip }}
+conn {{ replace .HostIP "." "_" -1 }}__{{ replace $peer_ip "." "_" -1 }}
         authby=secret
-        left={{$ip}}
-        right={{$peer_ip}}
+        left={{ .HostIP }}
+        right={{ $peer_ip }}
         type=transport
         auto=start
         esp=aes128gcm16!
-{{end}}{{end}}{{end}}
+{{ end }}{{ end }}
+{{ end }}
 `))
 )
+
+type TemplateData struct {
+	HostIP  string
+	NodeIPs []string
+}
+
+type Options struct {
+	NodeName             string
+	PreferredAddressType string
+	QPS                  float32
+	Burst                int
+	ResyncPeriod         time.Duration
+	MaxNumRequeues       int
+}

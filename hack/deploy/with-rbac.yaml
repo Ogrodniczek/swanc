@@ -45,20 +45,29 @@ spec:
   template:
     metadata:
       labels:
-        app: strongswan
+        app: swanc
     spec:
       serviceAccountName: swanc
       hostNetwork: true
       nodeSelector:
         beta.kubernetes.io/arch: amd64
       tolerations:
-      - key: "node-role.kubernetes.io/master"
-        operator: "Exists"
-        effect: "NoSchedule"
+        - key: "CriticalAddonsOnly"
+          operator: "Exists"
+        # vpn controller should be able to run on masters
+        - key: "node-role.kubernetes.io/master"
+          effect: NoSchedule
       containers:
       - name: operator
-        image: appscode/swanc:1.5.0
+        image: appscode/swanc:5.0.0-alpha.0
         imagePullPolicy: IfNotPresent
+        ports:
+        - containerPort: 500
+          name: nat1
+          protocol: UDP
+        - containerPort: 4500
+          name: nat2
+          protocol: UDP
         securityContext:
           privileged: true
         env:
@@ -66,31 +75,25 @@ spec:
           valueFrom:
             fieldRef:
               fieldPath: spec.nodeName
-        - name: NODE_IP
-          valueFrom:
-            fieldRef:
-              fieldPath: status.podIP
         volumeMounts:
-        - name: ipsecconf
-          mountPath: /etc/ipsec.conf
-        - name: ipsecsecrets
-          mountPath: /etc/ipsec.secrets
-        - name: ipsecconf
-          mountPath: /etc/ipsec.con
         - name: libmodules
           mountPath: /lib/modules
         - name: modprobe
           mountPath: /sbin/modprobe
+        - name: ipseckey
+          mountPath: /etc/ipsec.secrets
+          readOnly: true
+        - name: ipsecconf
+          mountPath: /srv/swanc
       volumes:
-      - name: ipsecconf
-        hostPath:
-          path: /etc/ipsec.conf
-      - name: ipsecsecrets
-        hostPath:
-          path: /etc/ipsec.secrets
       - name: libmodules
         hostPath:
           path: /lib/modules
       - name: modprobe
         hostPath:
           path: /sbin/modprobe
+      - name: ipseckey
+        secret:
+          secretName: swanc
+      - name: ipsecconf
+        emptyDir: {}
