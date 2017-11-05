@@ -11,4 +11,4 @@ rm -rf dist
 env APPSCODE_ENV=prod ./hack/docker/setup.sh release
 rm dist/.tag
 
-pood
+popd
