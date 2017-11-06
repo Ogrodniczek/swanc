@@ -75,7 +75,7 @@ func (c *Controller) processNextNode() bool {
 	defer c.nQueue.Done(key)
 
 	// Invoke the method containing the business logic
-	err := c.runNodeInjector(key.(string))
+	err := c.syncVPNConfig(key.(string))
 	if err == nil {
 		// Forget about the #AddRateLimited history of the key on every successful synchronization.
 		// This ensures that future processing of updates for this key is not delayed because of
@@ -102,10 +102,8 @@ func (c *Controller) processNextNode() bool {
 	return true
 }
 
-// syncToStdout is the business logic of the controller. In this controller it simply prints
-// information about the deployment to stdout. In case an error happened, it has to simply return the error.
-// The retry logic should not be part of the business logic.
-func (c *Controller) runNodeInjector(key string) error {
+// syncVPNConfig regenerates the ipsec.conf file and updates ipsec if the config is changed.
+func (c *Controller) syncVPNConfig(key string) error {
 	obj, exists, err := c.nIndexer.GetByKey(key)
 	if err != nil {
 		log.Errorf("Fetching object with key %s from store failed with %v", key, err)

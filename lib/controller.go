@@ -27,7 +27,6 @@ import (
 type Controller struct {
 	k8sClient kubernetes.Interface
 	opts      Options
-	reload    chan struct{}
 	recorder  record.EventRecorder
 	writer    *ioutilz.AtomicWriter
 
@@ -42,7 +41,6 @@ func New(client kubernetes.Interface, opts Options) *Controller {
 	return &Controller{
 		k8sClient: client,
 		opts:      opts,
-		reload:    make(chan struct{}),
 	}
 }
 
