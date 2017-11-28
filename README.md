@@ -4,7 +4,7 @@
 StrongSwan based VPN Controller for Kubernetes
 
 ## Supported Versions
-Kubernetes 1.5+
+Kubernetes 1.8+
 
 ## Installation
 To install Swanc, please follow the guide [here](/docs/install.md).

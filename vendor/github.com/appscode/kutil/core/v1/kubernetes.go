@@ -2,80 +2,80 @@ package v1
 
 import (
 	"errors"
-	"fmt"
-	"reflect"
 
-	"github.com/appscode/kutil"
+	"github.com/appscode/kutil/meta"
 	core "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/conversion"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 )
 
 func GetGroupVersionKind(v interface{}) schema.GroupVersionKind {
-	return core.SchemeGroupVersion.WithKind(kutil.GetKind(v))
+	return core.SchemeGroupVersion.WithKind(meta.GetKind(v))
 }
 
 func AssignTypeKind(v interface{}) error {
-	if reflect.ValueOf(v).Kind() != reflect.Ptr {
-		return fmt.Errorf("%v must be a pointer", v)
+	_, err := conversion.EnforcePtr(v)
+	if err != nil {
+		return err
 	}
 
 	switch u := v.(type) {
 	case *core.Pod:
 		u.APIVersion = core.SchemeGroupVersion.String()
-		u.Kind = kutil.GetKind(v)
+		u.Kind = meta.GetKind(v)
 		return nil
 	case *core.ReplicationController:
 		u.APIVersion = core.SchemeGroupVersion.String()
-		u.Kind = kutil.GetKind(v)
+		u.Kind = meta.GetKind(v)
 		return nil
 	case *core.ConfigMap:
 		u.APIVersion = core.SchemeGroupVersion.String()
-		u.Kind = kutil.GetKind(v)
+		u.Kind = meta.GetKind(v)
 		return nil
 	case *core.Secret:
 		u.APIVersion = core.SchemeGroupVersion.String()
-		u.Kind = kutil.GetKind(v)
+		u.Kind = meta.GetKind(v)
 		return nil
 	case *core.Service:
 		u.APIVersion = core.SchemeGroupVersion.String()
-		u.Kind = kutil.GetKind(v)
+		u.Kind = meta.GetKind(v)
 		return nil
 	case *core.PersistentVolumeClaim:
 		u.APIVersion = core.SchemeGroupVersion.String()
-		u.Kind = kutil.GetKind(v)
+		u.Kind = meta.GetKind(v)
 		return nil
 	case *core.PersistentVolume:
 		u.APIVersion = core.SchemeGroupVersion.String()
-		u.Kind = kutil.GetKind(v)
+		u.Kind = meta.GetKind(v)
 		return nil
 	case *core.Node:
 		u.APIVersion = core.SchemeGroupVersion.String()
-		u.Kind = kutil.GetKind(v)
+		u.Kind = meta.GetKind(v)
 		return nil
 	case *core.ServiceAccount:
 		u.APIVersion = core.SchemeGroupVersion.String()
-		u.Kind = kutil.GetKind(v)
+		u.Kind = meta.GetKind(v)
 		return nil
 	case *core.Namespace:
 		u.APIVersion = core.SchemeGroupVersion.String()
-		u.Kind = kutil.GetKind(v)
+		u.Kind = meta.GetKind(v)
 		return nil
 	case *core.Endpoints:
 		u.APIVersion = core.SchemeGroupVersion.String()
-		u.Kind = kutil.GetKind(v)
+		u.Kind = meta.GetKind(v)
 		return nil
 	case *core.ComponentStatus:
 		u.APIVersion = core.SchemeGroupVersion.String()
-		u.Kind = kutil.GetKind(v)
+		u.Kind = meta.GetKind(v)
 		return nil
 	case *core.LimitRange:
 		u.APIVersion = core.SchemeGroupVersion.String()
-		u.Kind = kutil.GetKind(v)
+		u.Kind = meta.GetKind(v)
 		return nil
 	case *core.Event:
 		u.APIVersion = core.SchemeGroupVersion.String()
-		u.Kind = kutil.GetKind(v)
+		u.Kind = meta.GetKind(v)
 		return nil
 	}
 	return errors.New("unknown api object type")
@@ -134,14 +134,14 @@ func EnsureContainerDeleted(containers []core.Container, name string) []core.Con
 	return containers
 }
 
-func UpsertContainer(containers []core.Container, nv core.Container) []core.Container {
-	for i, vol := range containers {
-		if vol.Name == nv.Name {
-			containers[i] = nv
+func UpsertContainer(containers []core.Container, upsert core.Container) []core.Container {
+	for i, container := range containers {
+		if container.Name == upsert.Name {
+			containers[i] = upsert
 			return containers
 		}
 	}
-	return append(containers, nv)
+	return append(containers, upsert)
 }
 
 func GetString(m map[string]string, key string) string {
@@ -159,6 +159,16 @@ func UpsertVolume(volumes []core.Volume, nv core.Volume) []core.Volume {
 		}
 	}
 	return append(volumes, nv)
+}
+
+func UpsertVolumeClaim(volumeClaims []core.PersistentVolumeClaim, upsert core.PersistentVolumeClaim) []core.PersistentVolumeClaim {
+	for i, vc := range volumeClaims {
+		if vc.Name == upsert.Name {
+			volumeClaims[i] = upsert
+			return volumeClaims
+		}
+	}
+	return append(volumeClaims, upsert)
 }
 
 func EnsureVolumeDeleted(volumes []core.Volume, name string) []core.Volume {
@@ -189,14 +199,21 @@ func EnsureVolumeMountDeleted(mounts []core.VolumeMount, name string) []core.Vol
 	return mounts
 }
 
-func UpsertEnvVar(vars []core.EnvVar, nv core.EnvVar) []core.EnvVar {
-	for i, vol := range vars {
-		if vol.Name == nv.Name {
-			vars[i] = nv
-			return vars
+func UpsertEnvVars(vars []core.EnvVar, nv ...core.EnvVar) []core.EnvVar {
+	upsert := func(env core.EnvVar) {
+		for i, v := range vars {
+			if v.Name == env.Name {
+				vars[i] = env
+				return
+			}
 		}
+		vars = append(vars, env)
 	}
-	return append(vars, nv)
+
+	for _, env := range nv {
+		upsert(env)
+	}
+	return vars
 }
 
 func EnsureEnvVarDeleted(vars []core.EnvVar, name string) []core.EnvVar {
@@ -206,4 +223,14 @@ func EnsureEnvVarDeleted(vars []core.EnvVar, name string) []core.EnvVar {
 		}
 	}
 	return vars
+}
+
+func UpsertMap(maps, upsert map[string]string) map[string]string {
+	if maps == nil {
+		maps = make(map[string]string)
+	}
+	for k, v := range upsert {
+		maps[k] = v
+	}
+	return maps
 }

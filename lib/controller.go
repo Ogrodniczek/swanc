@@ -132,7 +132,7 @@ func (c *Controller) mount(reload bool) error {
 	)
 	for i := range nodes {
 		node := nodes[i]
-		if yes, _ := core_util.NodeRunningAndReady(*node); !yes {
+		if core_util.IsMaster(*node) {
 			continue
 		}
 		if node.Name == c.opts.NodeName {
