@@ -1,7 +1,7 @@
 [![Go Report Card](https://goreportcard.com/badge/github.com/appscode/swanc)](https://goreportcard.com/report/github.com/appscode/swanc)
 
 # SwanC
-StrongSwan based VPN Controller for Kubernetes. This is intended to used with [Pharmer by AppsCode](https://appscode.com/products/pharmer).
+StrongSwan based VPN Controller for Kubernetes. This is intended to be used with [Pharmer by AppsCode](https://appscode.com/products/pharmer).
 
 ## Supported Versions
 Kubernetes 1.8+
