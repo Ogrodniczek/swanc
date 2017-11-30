@@ -49,7 +49,7 @@ To build and push your custom Docker image, follow the steps below. To release a
 $ ./hack/docker/setup.sh; ./hack/docker/setup.sh push
 
 # Add docker tag for your repository
-$ docker tag appscode/swanc:<tag> <image>:<tag>
+$ docker tag pharmer/swanc:<tag> <image>:<tag>
 
 # Push Image
 $ docker push <image>:<tag>

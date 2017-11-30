@@ -6,7 +6,7 @@ set -o pipefail
 
 LIB_ROOT=$(dirname "${BASH_SOURCE}")/..
 source "$LIB_ROOT/libbuild/common/lib.sh"
-source "$LIB_ROOT/libbuild/common/public_image.sh"
+source "$LIB_ROOT/libbuild/common/pharmer_image.sh"
 
 GOPATH=$(go env GOPATH)
 SRC=$GOPATH/src
