@@ -7,7 +7,7 @@ The following steps must be done from a Linux x64 bit machine.
 - Push all the changes to remote repo.
 - Build and push swanc docker image:
 ```console
-$ cd ~/go/src/github.com/appscode/swanc
+$ cd ~/go/src/github.com/pharmer/swanc
 ./hack/docker/setup.sh; env APPSCODE_ENV=prod ./hack/docker/setup.sh release
 ```
 

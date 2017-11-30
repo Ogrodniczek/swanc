@@ -16,20 +16,20 @@ ROOT=$GOPATH
 APPSCODE_ENV=${APPSCODE_ENV:-dev}
 IMG=swanc
 
-DIST=$GOPATH/src/github.com/appscode/swanc/dist
+DIST=$GOPATH/src/github.com/pharmer/swanc/dist
 mkdir -p $DIST
 if [ -f "$DIST/.tag" ]; then
 	export $(cat $DIST/.tag | xargs)
 fi
 
 clean() {
-    pushd $GOPATH/src/github.com/appscode/swanc/hack/docker
+    pushd $GOPATH/src/github.com/pharmer/swanc/hack/docker
 	rm swanc
 	popd
 }
 
 build_binary() {
-	pushd $GOPATH/src/github.com/appscode/swanc
+	pushd $GOPATH/src/github.com/pharmer/swanc
 	./hack/builddeps.sh
     ./hack/make.py build swanc
 	detect_tag $DIST/.tag
@@ -37,7 +37,7 @@ build_binary() {
 }
 
 build_docker() {
-	pushd $GOPATH/src/github.com/appscode/swanc/hack/docker
+	pushd $GOPATH/src/github.com/pharmer/swanc/hack/docker
 	cp $DIST/swanc/swanc-linux-amd64 swanc
 	chmod 755 swanc
 

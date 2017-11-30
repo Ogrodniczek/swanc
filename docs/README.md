@@ -1,4 +1,4 @@
-[![Go Report Card](https://goreportcard.com/badge/github.com/appscode/swanc)](https://goreportcard.com/report/github.com/appscode/swanc)
+[![Go Report Card](https://goreportcard.com/badge/github.com/pharmer/swanc)](https://goreportcard.com/report/github.com/pharmer/swanc)
 
 # SwanC
 StrongSwan based VPN Controller for Kubernetes

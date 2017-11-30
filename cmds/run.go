@@ -5,7 +5,7 @@ import (
 	"time"
 
 	"github.com/appscode/go/log"
-	"github.com/appscode/swanc/lib"
+	"github.com/pharmer/swanc/lib"
 	"github.com/spf13/cobra"
 	core "k8s.io/api/core/v1"
 	"k8s.io/client-go/kubernetes"

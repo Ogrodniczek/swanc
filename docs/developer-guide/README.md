@@ -16,8 +16,8 @@ development environment, please follow [these instructions](https://golang.org/d
 #### Download Source
 
 ```console
-$ go get github.com/appscode/swanc
-$ cd $(go env GOPATH)/src/github.com/appscode/swanc
+$ go get github.com/pharmer/swanc
+$ cd $(go env GOPATH)/src/github.com/pharmer/swanc
 ```
 
 #### Install Dev tools

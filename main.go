@@ -4,7 +4,7 @@ import (
 	"log"
 
 	logs "github.com/appscode/go/log/golog"
-	"github.com/appscode/swanc/cmds"
+	"github.com/pharmer/swanc/cmds"
 )
 
 func main() {
