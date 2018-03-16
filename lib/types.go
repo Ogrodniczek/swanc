@@ -44,11 +44,11 @@ conn %default
         mobike=no
         keyexchange=ikev2
 
-{{ if .HostIP }}
-{{ range $peer_ip := $.NodeIPs }}{{ if ne .HostIP $peer_ip }}
-conn {{ replace .HostIP "." "_" -1 }}__{{ replace $peer_ip "." "_" -1 }}
+{{ if $.HostIP }}
+{{ range $peer_ip := $.NodeIPs }}{{ if ne $.HostIP $peer_ip }}
+conn {{ replace $.HostIP "." "_" -1 }}__{{ replace $peer_ip "." "_" -1 }}
         authby=secret
-        left={{ .HostIP }}
+        left={{ $.HostIP }}
         right={{ $peer_ip }}
         type=transport
         auto=start

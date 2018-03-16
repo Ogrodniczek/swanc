@@ -1,4 +1,9 @@
 [![Go Report Card](https://goreportcard.com/badge/github.com/pharmer/swanc)](https://goreportcard.com/report/github.com/pharmer/swanc)
+[![Build Status](https://travis-ci.org/pharmer/swanc.svg?branch=master)](https://travis-ci.org/pharmer/swanc)
+[![codecov](https://codecov.io/gh/pharmer/swanc/branch/master/graph/badge.svg)](https://codecov.io/gh/pharmer/swanc)
+[![Docker Pulls](https://img.shields.io/docker/pulls/pharmer/swanc.svg)](https://hub.docker.com/r/pharmer/swanc/)
+[![Slack](https://slack.appscode.com/badge.svg)](https://slack.appscode.com)
+[![Twitter](https://img.shields.io/twitter/follow/appscodehq.svg?style=social&logo=twitter&label=Follow)](https://twitter.com/intent/follow?screen_name=AppsCodeHQ)
 
 # SwanC
 StrongSwan based VPN Controller for Kubernetes. This is intended to be used with [Pharmer by AppsCode](https://appscode.com/products/pharmer).

@@ -16,3 +16,5 @@ import:
   version: release-1.8
 - package: k8s.io/client-go
   version: kubernetes-1.8.3-beta.0
+- package: github.com/cpuguy83/go-md2man
+  version: v1.0.4

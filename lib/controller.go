@@ -149,7 +149,7 @@ func (c *Controller) mount(reload bool) error {
 	sort.Strings(td.NodeIPs)
 
 	if curNode != nil && !c.isAnnotated(curNode) {
-		_, err = core_util.PatchNode(c.k8sClient, curNode, func(in *core.Node) *core.Node {
+		_, _, err = core_util.PatchNode(c.k8sClient, curNode, func(in *core.Node) *core.Node {
 			if in.Annotations == nil {
 				in.Annotations = map[string]string{}
 			}
