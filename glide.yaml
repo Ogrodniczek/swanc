@@ -2,19 +2,21 @@ package: github.com/pharmer/swanc
 import:
 - package: github.com/appscode/go
 - package: github.com/appscode/kutil
-  version: release-5.0
+  version: release-7.0
 - package: github.com/hashicorp/go-version
   repo: https://github.com/appscode/go-version.git
   vcs: git
   version: master
 - package: github.com/jpillora/go-ogle-analytics
 - package: github.com/spf13/cobra
+  version: master
 - package: github.com/spf13/pflag
+  version: master
 - package: k8s.io/api
-  version: release-1.8
+  version: release-1.10
 - package: k8s.io/apimachinery
-  version: release-1.8
+  version: release-1.10
 - package: k8s.io/client-go
-  version: kubernetes-1.8.3-beta.0
+  version: v7.0.0
 - package: github.com/cpuguy83/go-md2man
   version: v1.0.4

@@ -1,15 +1,18 @@
 package v1
 
 import (
-	"errors"
-
+	"github.com/appscode/go/types"
 	"github.com/appscode/kutil/meta"
 	"github.com/appscode/mergo"
+	"github.com/json-iterator/go"
+	"github.com/pkg/errors"
 	core "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/conversion"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 )
+
+var json = jsoniter.ConfigFastest
 
 func GetGroupVersionKind(v interface{}) schema.GroupVersionKind {
 	return core.SchemeGroupVersion.WithKind(meta.GetKind(v))
@@ -79,7 +82,7 @@ func AssignTypeKind(v interface{}) error {
 		u.Kind = meta.GetKind(v)
 		return nil
 	}
-	return errors.New("unknown api object type")
+	return errors.New("unknown v1beta1 object type")
 }
 
 func RemoveNextInitializer(m metav1.ObjectMeta) metav1.ObjectMeta {
@@ -231,4 +234,60 @@ func UpsertMap(maps, upsert map[string]string) map[string]string {
 		maps[k] = v
 	}
 	return maps
+}
+
+func MergeLocalObjectReferences(old, new []core.LocalObjectReference) []core.LocalObjectReference {
+	m := make(map[string]core.LocalObjectReference)
+	for _, ref := range old {
+		m[ref.Name] = ref
+	}
+	for _, ref := range new {
+		m[ref.Name] = ref
+	}
+
+	result := make([]core.LocalObjectReference, 0, len(m))
+	for _, ref := range m {
+		result = append(result, ref)
+	}
+	return result
+}
+
+func EnsureOwnerReference(meta metav1.ObjectMeta, owner *core.ObjectReference) metav1.ObjectMeta {
+	if owner == nil ||
+		owner.APIVersion == "" ||
+		owner.Kind == "" ||
+		owner.Name == "" ||
+		owner.UID == "" {
+		return meta
+	}
+
+	fi := -1
+	for i, ref := range meta.OwnerReferences {
+		if ref.Kind == owner.Kind && ref.Name == owner.Name {
+			fi = i
+			break
+		}
+	}
+	if fi == -1 {
+		meta.OwnerReferences = append(meta.OwnerReferences, metav1.OwnerReference{})
+		fi = len(meta.OwnerReferences) - 1
+	}
+	meta.OwnerReferences[fi].APIVersion = owner.APIVersion
+	meta.OwnerReferences[fi].Kind = owner.Kind
+	meta.OwnerReferences[fi].Name = owner.Name
+	meta.OwnerReferences[fi].UID = owner.UID
+	if meta.OwnerReferences[fi].BlockOwnerDeletion == nil {
+		meta.OwnerReferences[fi].BlockOwnerDeletion = types.FalseP()
+	}
+	return meta
+}
+
+func RemoveOwnerReference(meta metav1.ObjectMeta, owner *core.ObjectReference) metav1.ObjectMeta {
+	for i, ref := range meta.OwnerReferences {
+		if ref.Kind == owner.Kind && ref.Name == owner.Name {
+			meta.OwnerReferences = append(meta.OwnerReferences[:i], meta.OwnerReferences[i+1:]...)
+			break
+		}
+	}
+	return meta
 }
