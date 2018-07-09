@@ -1,8 +1,8 @@
-hash: bd22815cf50bb1c81c788d5762eb7bd8f9cab7efd6ffd5f9235ee9071c1a3a12
-updated: 2018-05-03T15:25:41.737436599-07:00
+hash: 7b8916535a891e2649671079e8b0a8888b7579c8b1a3e6628c3c338fe44af250
+updated: 2018-07-08T21:12:50.792738127-07:00
 imports:
 - name: github.com/appscode/go
-  version: 230e0e4622c682b5d117db8c28a66404ed874ed5
+  version: df3c57fca2bef0e5b7fd085507deb20f18c790df
   subpackages:
   - context
   - ioutil
@@ -12,13 +12,10 @@ imports:
   - sets
   - types
   - version
-- name: github.com/appscode/jsonpatch
-  version: 58a38a46ddb591a543c6b1003213353e29331c5a
 - name: github.com/appscode/kutil
-  version: 315e8967219ed1ab9d0acd6e0268e9b2fe60f742
+  version: ade0469e223909a181ae7a020024aa7adeb3dde6
   subpackages:
   - core/v1
-  - meta
 - name: github.com/appscode/mergo
   version: e3000cb3d28c72b837601cac94debd91032d19fe
 - name: github.com/cpuguy83/go-md2man
@@ -29,8 +26,6 @@ imports:
   version: 782f4967f2dc4564575ca782fe2d04090b5faca8
   subpackages:
   - spew
-- name: github.com/evanphx/json-patch
-  version: 944e07253867aacae43c04b2e6a239005443f33a
 - name: github.com/fsnotify/fsnotify
   version: f12c6236fe7b5cf6bcf30e5935d08cb079d78334
 - name: github.com/ghodss/yaml
@@ -47,20 +42,17 @@ imports:
   subpackages:
   - lru
 - name: github.com/golang/protobuf
-  version: 1643683e1b54a9e88ad26d98f81400c8c9d9f4f9
+  version: b4deda0973fb4c70b50d226b1af49f3da59f5265
   subpackages:
+  - jsonpb
   - proto
   - ptypes
   - ptypes/any
   - ptypes/duration
+  - ptypes/struct
   - ptypes/timestamp
-- name: github.com/google/go-cmp
-  version: 5411ab924f9ffa6566244a9e504bc347edacffd3
-  subpackages:
-  - cmp
-  - cmp/internal/diff
-  - cmp/internal/function
-  - cmp/internal/value
+- name: github.com/google/btree
+  version: 7d79101e329e5a3adf994758c578dab82b90c017
 - name: github.com/google/gofuzz
   version: 44d81051d367757e1c7c6a5a86423ece9afcf63c
 - name: github.com/google/uuid
@@ -71,16 +63,14 @@ imports:
   - OpenAPIv2
   - compiler
   - extensions
-- name: github.com/hashicorp/go-version
-  version: 53932f80ddea12bea96be074f9fb2dc545806aba
-  repo: https://github.com/appscode/go-version.git
-  vcs: git
+- name: github.com/gregjones/httpcache
+  version: 787624de3eb7bd915c329cba748687a3b22666a6
+  subpackages:
+  - diskcache
 - name: github.com/hashicorp/golang-lru
   version: a0d98a5f288019575c6d1f4bb1573fef2d1fcdc4
   subpackages:
   - simplelru
-- name: github.com/howeyc/gopass
-  version: bf9dde6d0d2c004a008c27aaee91170c786f6db8
 - name: github.com/imdario/mergo
   version: 6633656539c1639d9d78127b7d47c622b5d7b6dc
 - name: github.com/inconshreveable/mousetrap
@@ -88,15 +78,17 @@ imports:
 - name: github.com/jpillora/go-ogle-analytics
   version: 14b04e0594ef6a9fd943363b135656f0ec8c9d0e
 - name: github.com/json-iterator/go
-  version: 13f86432b882000a51c6e610c620974462691a97
+  version: ab8a2e0c74be9d3be70b3184d9acc634935ded82
+- name: github.com/modern-go/concurrent
+  version: bacd9c7ef1dd9b15be4a9909b8ac7a4e313eec94
+- name: github.com/modern-go/reflect2
+  version: 05fbef0ca5da472bbf96c9322b84a53edc03c9fd
+- name: github.com/peterbourgon/diskv
+  version: 5f041e8faa004a95c88a202771f4cc3e991971e6
 - name: github.com/pkg/errors
   version: 645ef00459ed84a119197bfb8d8205042c6df63d
 - name: github.com/russross/blackfriday
   version: 300106c228d52c8941d4b3de6054a6062a86dda3
-- name: github.com/sergi/go-diff
-  version: 97b2266dfe4bd4ea1b81a463322f04f8b724801e
-  subpackages:
-  - diffmatchpatch
 - name: github.com/shurcooL/sanitized_anchor_name
   version: 10ef21a441db47d8b13ebcc5fd2310f636973c77
 - name: github.com/spf13/cobra
@@ -105,14 +97,8 @@ imports:
   - doc
 - name: github.com/spf13/pflag
   version: 583c0c0531f06d5278b7d917446061adc344b5cd
-- name: github.com/yudai/gojsondiff
-  version: 7b1b7adf999dab73a6eb02669c3d82dbb27a3dd6
-  subpackages:
-  - formatter
-- name: github.com/yudai/golcs
-  version: d1c525dea8ce39ea9a783d33cf08932305373f2c
 - name: golang.org/x/crypto
-  version: 81e90905daefcd6fd217b62423c0908922eadb30
+  version: 49796115aa4b964c318aad4f3084fdb41e9aa067
   subpackages:
   - ssh/terminal
 - name: golang.org/x/net
@@ -144,7 +130,7 @@ imports:
 - name: gopkg.in/yaml.v2
   version: 670d4cfef0544295bc27a114dbac37980d83185a
 - name: k8s.io/api
-  version: 590a9173e3b65d74e907fcfd94b78465cf314760
+  version: 072894a440bdee3a891dea811fe42902311cd2a3
   subpackages:
   - admissionregistration/v1alpha1
   - admissionregistration/v1beta1
@@ -170,12 +156,15 @@ imports:
   - rbac/v1alpha1
   - rbac/v1beta1
   - scheduling/v1alpha1
+  - scheduling/v1beta1
   - settings/v1alpha1
   - storage/v1
   - storage/v1alpha1
   - storage/v1beta1
 - name: k8s.io/apimachinery
-  version: 01bc873149a1802eb74df583613872d126449ed5
+  version: a028cc114e307e9478abfac860c45e06b5c533dc
+  repo: https://github.com/pharmer/apimachinery.git
+  vcs: git
   subpackages:
   - pkg/api/errors
   - pkg/api/meta
@@ -219,7 +208,7 @@ imports:
   - third_party/forked/golang/json
   - third_party/forked/golang/reflect
 - name: k8s.io/client-go
-  version: 23781f4d6632d88e869066eaebb743857aa1ef9b
+  version: 7d04d0e2a0a1a4d4a1cd6baa432a2301492e4e65
   subpackages:
   - discovery
   - kubernetes
@@ -248,6 +237,7 @@ imports:
   - kubernetes/typed/rbac/v1alpha1
   - kubernetes/typed/rbac/v1beta1
   - kubernetes/typed/scheduling/v1alpha1
+  - kubernetes/typed/scheduling/v1beta1
   - kubernetes/typed/settings/v1alpha1
   - kubernetes/typed/storage/v1
   - kubernetes/typed/storage/v1alpha1
@@ -255,6 +245,7 @@ imports:
   - listers/core/v1
   - pkg/apis/clientauthentication
   - pkg/apis/clientauthentication/v1alpha1
+  - pkg/apis/clientauthentication/v1beta1
   - pkg/version
   - plugin/pkg/client/auth/exec
   - rest
@@ -272,13 +263,14 @@ imports:
   - transport
   - util/buffer
   - util/cert
+  - util/connrotation
   - util/flowcontrol
   - util/homedir
   - util/integer
   - util/retry
   - util/workqueue
 - name: k8s.io/kube-openapi
-  version: 50ae88d24ede7b8bad68e23c805b5d3da5c8abaf
+  version: 91cfa479c814065e420cee7ed227db0f63a5854e
   subpackages:
   - pkg/util/proto
 testImports: []
