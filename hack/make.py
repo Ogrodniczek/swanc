@@ -153,6 +153,10 @@ def default():
     die(call('GO15VENDOREXPERIMENT=1 go install .'))
 
 
+def revendor():
+    libbuild.revendor()
+
+
 if __name__ == "__main__":
     if len(sys.argv) > 1:
         # http://stackoverflow.com/a/834451
